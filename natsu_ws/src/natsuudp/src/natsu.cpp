@@ -21,10 +21,8 @@ RRST-NHK-Project 2025 夏ロボ
 #define MC_PRINTF 0 // マイコン側のprintfを無効化・有効化(0 or 1)
 
 // 各機構の速さの指定(%)
-int speed_collect_ball = 30;
 int speed_lift_up = 30;
-int speed_lift_down = 20;
-int speed_put_box = 20;
+int speed_lift_down = -20;
 
 
 //射出機構の速さ
@@ -59,9 +57,9 @@ debug: マイコンのprintfを有効化, MD: モータードライバー, TR: �
 | data[18] | TR8 | 0 or 1|
 //mbed2
 | data[19] | MD1 | -100 ~ 100 |
-| data[20] | MD2 | -100 ~ 100 | //servo(餅)
-| data[21] | MD3 | -100 ~ 100 | //servo 
-| data[22] | MD4 | -100 ~ 100 | //servo
+| data[20] | MD2 | -100 ~ 100 | 
+| data[21] | MD3 | -100 ~ 100 | 
+| data[22] | MD4 | -100 ~ 100 | 
 | data[23] | MD5 | -100 ~ 100 |
 | data[24] | MD6 | -100 ~ 100 |
 | data[25] | Servo1 | 0 ~ 270 |
@@ -86,33 +84,36 @@ public:
     // 射出シーケンス(１段階目)
     static void shot_action(UDP &udp) {
         data[19] = speed_shot;
-        data[29] = 1;
+        data[34] = 1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "ショット" << std::endl;
         data[19] = 0;
+        data[34] = 0;
         udp.send(data);
         std::cout << "完了" << std::endl;
     }
     // 射出シーケンス(2段階目)
     static void shoot_action(UDP &udp) {
         data[19] = speed_shoot;
-        data[29] = 1;
+        data[35] = 1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "シュート" << std::endl;
         data[19] = 0;
+        data[35] = 0;
         udp.send(data);
         std::cout << "完了" << std::endl;
     }
     // 射出シーケンス(3段階目)
     static void longshoot_action(UDP &udp) {
         data[19] = speed_longshoot;
-        data[29] = 1;
+        data[36] = 1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "ロングシュート" << std::endl;
         data[19] = 0;
+        data[36] = 0;
         udp.send(data); 
         std::cout << "完了" << std::endl;
     }
@@ -121,22 +122,18 @@ public:
     //ボール(餅)回収シーケンス
     static void collect_ball_action(UDP &udp) {
         data[25] = 0;
-        data[20] = 0;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "初期位置に戻る" << std::endl;
-        data[25] = 45;
-        data[20] = speed_collect_ball;
+        data[25] = 45;     
         udp.send(data);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "ボール回収準備中..." << std::endl;
         data[25] = 90;
-        data[20] = speed_collect_ball;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "ボール回収中..." << std::endl;
         udp.send(data);
         data[25] = 0;
-        data[20] = 0;
         std::cout << "完了." << std::endl;
         udp.send(data);
     }
@@ -145,13 +142,10 @@ public:
 
        /* 必要がなければコメントアウト
         //servo
-        data[21] = 0;
-        data[22] = 0;
         data[26] = 0;
         data[27] = 0;
         //MD
         data[23] = 0;
-        data[30] = 0;
         //ポンプ&シリンダ
         data[31] = 0;
         data[32] = 0;
@@ -159,64 +153,80 @@ public:
         */
 
     //リフトの状態管理
-    static bool state_lift_up;
-    static bool state_lift_down;
+    static bool state_folk_up;
+    static bool state_folk_middle;
+    static bool state_folk_down;
+    
     //段ボール(柱)回収シーケンス
-    static void collect_box_action(UDP &udp) {
-        state_lift_down = true;
-        udp.send(data);
-        std::cout << "<柱シーケンス開始>" << std::endl;
-        data[31] = 1;
-        data[32] = 1;
-        data[33] = 1;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        udp.send(data);
-        std::cout << "柱回収中" << std::endl;
-        data[31] = 0;
-        data[32] = 0;
-        data[33] = 0;
-        data[23] = speed_lift_up;
-        data[30] = 1;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        udp.send(data);
-        std::cout << "リフト上昇中..." << std::endl;
-        data[23] = 0;
-        udp.send(data);
-        std::cout << "リフト上昇完了." << std::endl;
-        state_lift_up = true;
-        std::cout << "上棟準備待機中" << std::endl;
+    static void ready_collect_box_action(UDP &udp) {
+            data[26] = 0;
+            data[27] = 0;
+            udp.send(data);
+            std::cout << "上棟準備開始" << std::endl;
+            std::cout << "上棟準備中..." << std::endl;
+            data[26] = 90;
+            data[27] = 90;
+            udp.send(data);
+            std::cout << " ..." << std::endl;
+            std::cout << "上棟準備完了" << std::endl;
+            state_folk_up = true;
     }
 
-    static void put_box_action(UDP &udp) {
-        state_lift_up = true;
-        udp.send(data);
-        std::cout << "上棟準備開始" << std::endl;
-        //MD
-        data[23] = speed_lift_down;
-        data[30] = 0;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        udp.send(data);
-        std::cout << "リフト下降" << std::endl;
-        data[23] = 0;
-        udp.send(data);
-        std::cout << "リフト下降完了." << std::endl;
-        state_lift_down = true;
-        std::cout << "上棟準備完了" << std::endl;
-        data[21] = 90;
-        data[22] = 90;
-        data[26] = speed_put_box;
-        data[27] = speed_put_box;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        udp.send(data);
-        std::cout << "上棟中" << std::endl;
-        data[21] = 0;
-        data[22] = 0;
-        data[26] = 0;
-        data[27] = 0;
-        udp.send(data);
-        std::cout << "上棟完了" << std::endl;
-        std::cout << "<柱シーケンス終了>" << std::endl;
+    static void collect_box_action(UDP &udp) {
+            data[31] = 1;
+            data[32] = 1;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            udp.send(data);
+            std::cout << "柱回収中" << std::endl;
+            data[31] = 0;
+            data[32] = 0;
+            udp.send(data);
+            state_folk_middle = true;
+            std::cout << "完了." << std::endl;
     }
+   
+   static void end_collect_box_action(UDP &udp) {
+            state_folk_up = true;
+            std::cout << "上棟開始" << std::endl;
+            data[26] = 0;
+            data[27] = 0;
+            udp.send(data);
+            std::cout << " 上棟完了." << std::endl;
+            state_folk_down = true;
+            std::cout << "柱回収シーケンス完了" << std::endl;
+    }
+
+    
+    static void lift_up_action(UDP &udp) {
+            state_folk_up = true;
+            data[33] = 1;
+            udp.send(data);
+            std::cout << "リフト準備開始" << std::endl;
+            data[23] = speed_lift_up;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            udp.send(data);
+            std::cout << "リフト上昇中..." << std::endl;
+            data[23] = 0;
+            data[33] = 0;
+            udp.send(data);
+            std::cout << "リフト上昇完了." << std::endl;
+    }
+
+    static void lift_down_action(UDP &udp) {
+            state_folk_up = true;
+            data[33] = 1;
+            udp.send(data);
+            std::cout << "リフト準備開始" << std::endl;
+            data[23] = speed_lift_down;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            udp.send(data);
+            std::cout << "リフト下降中..." << std::endl;
+            data[23] = 0;
+            data[33] = 0;
+            udp.send(data);
+            std::cout << "リフト下降完了." << std::endl;
+    }
+
 
     // テスト用！！実機で実行するな！！！！
     static void tester(UDP &udp) {
@@ -236,8 +246,9 @@ public:
     }
 };
 
-bool Action::state_lift_up = false;
-bool Action::state_lift_down = false;
+bool Action::state_folk_up = false;
+bool Action::state_folk_middle = false;
+bool Action::state_folk_down = false;
 
 class PS4_Listener : public rclcpp::Node {
 public:
@@ -271,8 +282,8 @@ private:
         bool UP = msg->axes[7] == 1.0;
         bool DOWN = msg->axes[7] == -1.0;
 
-        // bool L1 = msg->buttons[4];
-        // bool R1 = msg->buttons[5];
+        bool L1 = msg->buttons[4];
+        //bool R1 = msg->buttons[5];
 
         // float L2 = (-1 * msg->axes[2] + 1) / 2;
         // float R2 = (-1 * msg->axes[5] + 1) / 2;
@@ -301,24 +312,37 @@ private:
         if (CIRCLE) {
             Action::collect_ball_action(udp_);
         }
-        if (CROSS){
-            Action::shot_action(udp_);
+
+        if (CROSS && Action::state_folk_down) {
+            Action::ready_collect_box_action(udp_);
+        }
+            
+        if (CROSS && Action::state_folk_up) {
+            Action::collect_box_action(udp_);
+        }
+        
+        if (CROSS && Action::state_folk_middle) {
+            Action::end_collect_box_action(udp_);
         }
 
         if (TRIANGLE){
+            Action::shot_action(udp_);
+        }
+
+        if (SQUARE){
             Action::shoot_action(udp_);
         }
 
-        if(SQUARE) {
+        if (L1) {
             Action::longshoot_action(udp_);
         }
 
-        if (UP && Action::state_lift_down) {
-            Action::collect_box_action(udp_);
+        if (UP) {
+            Action::lift_up_action(udp_);
         }
 
-        if (DOWN && Action::state_lift_up) {
-            Action::put_box_action(udp_);
+        if (DOWN) {
+            Action::lift_down_action(udp_);
         }
 
         // if (OPTION) {
@@ -347,17 +371,13 @@ public:
 private:
     void params_listener_callback(
         const std_msgs::msg::Int32MultiArray::SharedPtr msg) {
-        speed_collect_ball = msg->data[0];
-        speed_lift_up = msg->data[1];
-        speed_lift_down  = msg->data[2];
-        speed_put_box = msg->data[3];
-        speed_shot = msg->data[4];
-        speed_shoot = msg->data[5];      
-        speed_longshoot = msg->data[6];
-        std::cout << speed_collect_ball;
+        speed_lift_up = msg->data[0];
+        speed_lift_down  = msg->data[1];
+        speed_shot = msg->data[2];
+        speed_shoot = msg->data[3];      
+        speed_longshoot = msg->data[4];
         std::cout << speed_lift_up;
         std::cout << speed_lift_down;
-        std::cout << speed_put_box;
         std::cout << speed_shot;
         std::cout << speed_shoot;
         std::cout << speed_longshoot << std::endl;

@@ -47,10 +47,10 @@ find_package(visualization_msgs REQUIRED)
 add_executable(nr25_natsu_sd src/natsu_servodrive.cpp src/include/UDP.cpp src/include/IP.cpp)
 ament_target_dependencies(nr25_natsu_sd rclcpp std_msgs sensor_msgs geometry_msgs)
 
-
 add_executable(nr25_natsu src/natsu.cpp src/include/UDP.cpp src/include/IP.cpp)
 ament_target_dependencies(nr25_natsu rclcpp std_msgs sensor_msgs geometry_msgs)
  
+
 # インストール設定
 install(TARGETS
   nr25_natsu_sd
