@@ -479,9 +479,9 @@ private:
             }
         }
 
-        if (SHARE) {
+    //    if (SHARE) {
             // Automation::auto_turn(udp_);
-        }
+    //    }
         // std::cout << REVERSEMODE << std::endl;
 
         // デバッグ用（for文でcoutするとカクつく）

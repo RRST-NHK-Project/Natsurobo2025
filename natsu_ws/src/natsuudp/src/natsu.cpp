@@ -22,14 +22,19 @@ RRST-NHK-Project 2010 夏ロボ
 #define MC_PRINTF 0 // マイコン側のprintfを無効化・有効化(0 or 1)
 
 // 各機構の速さの指定(%)
-int speed_lift_up = 30;
-int speed_lift_down = -20;
+int speed_lift_up = 60;
+int speed_lift_down = -60;
 
 
 //射出機構の速さ
 int speed_shot = 50;
 int speed_shoot = 60;
 int speed_longshoot = 70;
+
+//ラッチ用の文字設定
+bool SERVOMODE = false;
+bool VERTICALMODE = false;
+int SHOOTMODE = 0;
 
 std::vector<int16_t> data(19, 0); // マイコンに送信される配列"data"
 
@@ -80,38 +85,31 @@ public:
     /*射出機構*/
     // 射出シーケンス(１段階目)
     static void shot_action(UDP &udp) {
-        data[1] = speed_shot;
-        data[16] = 1;
+        data[3] = speed_shot;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "ショット" << std::endl;
-        data[1] = 0;
+        data[3] = 0;
         udp.send(data);
         std::cout << "完了" << std::endl;
     }
     // 射出シーケンス(2段階目)
     static void shoot_action(UDP &udp) {
-        data[1] = speed_shoot;
-        data[16] = 0;
-        data[17] = 1;
+        data[3] = speed_shoot;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "シュート" << std::endl;
-        data[1] = 0;
-        data[17] = 0;
+        data[3] = 0;
         udp.send(data);
         std::cout << "完了" << std::endl;
     }
     // 射出シーケンス(3段階目)
     static void longshoot_action(UDP &udp) {
-        data[1] = speed_longshoot;
-        data[17] = 0;
-        data[18] = 1;
+        data[3] = speed_longshoot;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "ロングシュート" << std::endl;
-        data[1] = 0;
-        data[18] = 0;
+        data[3] = 0;
         udp.send(data); 
         std::cout << "完了" << std::endl;
     }
@@ -121,29 +119,23 @@ public:
 class Lift_Action{
 public: 
     static void lift_up_action(UDP &udp) {
-            data[15] = 1;
-            udp.send(data);
             std::cout << "リフト準備開始" << std::endl;
-            data[2] = speed_lift_up;
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            data[4] = speed_lift_up = 60;
+            std::this_thread::sleep_for(std::chrono::milliseconds(20000));
             udp.send(data);
             std::cout << "リフト上昇中..." << std::endl;
-            data[2] = 0;
-            data[15] = 0;
+            data[4] = 0;
             udp.send(data);
             std::cout << "リフト上昇完了." << std::endl;
     }
 
     static void lift_down_action(UDP &udp) {
-            data[15] = 1;
-            udp.send(data);
             std::cout << "リフト準備開始" << std::endl;
-            data[2] = speed_lift_down;
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            data[4] = speed_lift_down = -60;
+            std::this_thread::sleep_for(std::chrono::milliseconds(20000));
             udp.send(data);
             std::cout << "リフト下降中..." << std::endl;
-            data[2] = 0;
-            data[15] = 0;
+            data[4] = 0;
             udp.send(data);
             std::cout << "リフト下降完了." << std::endl;
     }
@@ -171,9 +163,10 @@ public:
     // サーボ０°&ポンプ０　<-> サーボ90°&ポンプ1 
     static void init_folk_action(UDP &udp) {
             std::cout << "準備中" << std::endl;
-            data[13] = 0;
-            data[14] = 0;
+            data[1] = 0;
+            data[2] = 0;
             data[7] = 0;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             udp.send(data);
             state_servo_0 = true;
             std::cout << "ポンプOFF" << std::endl;
@@ -181,9 +174,10 @@ public:
 
     static void folk_action(UDP &udp) {
             std::cout << "準備中" << std::endl;
-            data[13] = 1;
-            data[14] = 1;
+            data[1] = 50;
+            data[2] = 50;
             data[7] = 90;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             udp.send(data);
             state_servo_0 = false;
             std::cout << "ポンプON" << std::endl;
@@ -194,9 +188,10 @@ public:
     // サーボ０°&ポンプ０　<-> サーボ90°&ポンプ1 
    static void init_vertical_folk_action(UDP &udp) {
            std::cout << "準備中" << std::endl;
-            data[13] = 0;
-            data[14] = 0;
+            data[1] = 0;
+            data[2] = 0;
             data[8] = 0;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             udp.send(data);
             state_servo_ver_0 = true;
             std::cout << "垂直方向。ポンプOFF" << std::endl;
@@ -204,9 +199,10 @@ public:
 
     static void vertical_folk_action(UDP &udp) {
            std::cout << "準備中" << std::endl;
-            data[13] = 1;
-            data[14] = 1;
+            data[1] = 50;
+            data[2] = 50;
             data[8] = 90;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             udp.send(data);
             state_servo_ver_0 = false;
             std::cout << "垂直方向。ポンプON" << std::endl;
@@ -300,7 +296,7 @@ public:
     PS4_Listener(const std::string &ip, int port)
         : Node("nhk10_natsu"), udp_(ip, port) {
         subscription_ = this->create_subscription<sensor_msgs::msg::Joy>(
-            "joy0", 10,
+            "joy", 10,
             std::bind(&PS4_Listener::ps4_listener_callback, this,
                       std::placeholders::_1));
         RCLCPP_INFO(this->get_logger(),
@@ -340,6 +336,15 @@ private:
         // bool L3 = msg->buttons[11];
         // bool R3 = msg->buttons[12];
 
+        static bool last_circle = false; // 前回の状態を保持する static 変数
+        static bool last_triangle= false;
+        static bool last_square= false;
+
+        // ラッチstatic 変数（初期状態は OFF とする）
+        static bool circle_latch = false;
+        static bool triangle_latch = false;
+        static int square_mode = 0 ;
+
         data[0] = MC_PRINTF; // マイコン側のprintfを無効化・有効化(0 or 1)
 
         if (PS) {
@@ -353,48 +358,46 @@ private:
             }
             rclcpp::shutdown();
         }
-        
+        //ラッチ(ボタンで変更)
+        if (CIRCLE && !last_circle) {
+            circle_latch = !circle_latch;
+        }
+        if (TRIANGLE && !last_triangle) {
+            triangle_latch = !triangle_latch;
+        }
+        if (SQUARE && !last_square) {
+            square_mode = (square_mode + 1) % 3;
+        }
+
+        //ラッチのボタンとモードの指定
+        last_circle = CIRCLE;
+        SERVOMODE = circle_latch;
+        last_triangle = TRIANGLE;
+        VERTICALMODE = triangle_latch;
+        last_square = SQUARE;
+        SHOOTMODE = square_mode;
+
+    
         //機構を初期状態にする
         if (CROSS) {
                 Init::init(udp_);
         }
 
-
         //シュート機構
         // ボタンを一回押すごとに速度変更
-        if (SQUARE && (data[18] == 1 || (data[16] == 0 && data[17] == 0 && data[18] == 0))){
+        if (SHOOTMODE == 0){
             Shoot_Action::shot_action(udp_);
         }
 
-        if (SQUARE && data[16] == 1){
+        if (SHOOTMODE == 1){
             Shoot_Action::shoot_action(udp_);
         }
 
-        if (SQUARE && data[17] == 1) {
+        if (SHOOTMODE == 2) {
             Shoot_Action::longshoot_action(udp_);
         }
 
-        // リフトのフォーク機構
-        //　サーボ０°＋ポンプ０　-> サーボ90°＋ポンプ1 -> サーボ0°＋ポンプ0
-        if (CIRCLE) {
-            if (Folk_Action::state_servo_0){
-                    Folk_Action::folk_action(udp_);
-            }
-            else{
-                    Folk_Action::init_folk_action(udp_);
-            }
-        }
-
-        ////ポンプ機構が垂直の場合
-        if (TRIANGLE) {
-            if(Folk_Action::state_servo_ver_0){
-                    Folk_Action::vertical_folk_action(udp_);
-            }
-            else{
-                    Folk_Action::init_vertical_folk_action(udp_);
-            }
-        }
-        
+  
         //リフト機構
         if (UP) {
             Lift_Action::lift_up_action(udp_);
@@ -426,10 +429,32 @@ private:
             Vgoal::vgoal_action(udp_);
         }
 
+        // リフトのフォーク機構
+        //　サーボ０°＋ポンプ０　-> サーボ90°＋ポンプ1 -> サーボ0°＋ポンプ0
+    
+        if (SERVOMODE == 1) {
+                    Folk_Action::folk_action(udp_);
+                }
+        if (SERVOMODE == 0) {
+                    Folk_Action::init_folk_action(udp_);
+                }
+            
+        
+
+        ////ポンプ機構が垂直の場合
+        if (VERTICALMODE == 1) {
+                    Folk_Action::vertical_folk_action(udp_);
+            }
+        if (VERTICALMODE == 0){
+                    Folk_Action::init_vertical_folk_action(udp_);
+            }
+        
+
         // if (OPTION) {
         //     Ball_Action::tester(udp_);
         // } 
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        
         udp_.send(data);
     }
 
