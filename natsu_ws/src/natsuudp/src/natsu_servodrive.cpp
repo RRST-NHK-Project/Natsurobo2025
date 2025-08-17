@@ -67,7 +67,7 @@ float min_distance = 0;
 bool front_cleared = false;
 float front_cleared_distance = 0.8; // 障害物検知のしきい値（要調整）
 
-std::vector<int16_t> data(37, 0); // マイコンに送信される配列"data"
+std::vector<int16_t> data(19, 0); // マイコンに送信される配列"data"
 /*
 マイコンに送信される配列"data"
 debug: マイコンのprintfを有効化, MD: モータードライバー, TR: トランジスタ
@@ -92,27 +92,7 @@ debug: マイコンのprintfを有効化, MD: モータードライバー, TR: �
 | data[16] | TR6 | 0 or 1|
 | data[17] | TR7 | 0 or 1|
 | data[18] | TR8 | 0 or 1|
-//mbed2
-| data[19] | MD1 | -100 ~ 100 |
-| data[20] | MD2 | -100 ~ 100 |
-| data[21] | MD3 | -100 ~ 100 |
-| data[22] | MD4 | -100 ~ 100 |
-| data[23] | MD5 | -100 ~ 100 |
-| data[24] | MD6 | -100 ~ 100 |
-| data[25] | Servo1 | 0 ~ 270 |
-| data[26] | Servo2 | 0 ~ 270 |
-| data[27] | Servo3 | 0 ~ 270 |
-| data[28] | Servo4 | 0 ~ 270 |
-| data[29] | TR1 | 0 or 1|
-| data[30] | TR2 | 0 or 1|
-| data[31] | TR3 | 0 or 1|
-| data[32] | TR4 | 0 or 1|
-| data[33] | TR5 | 0 or 1|
-| data[34] | TR6 | 0 or 1|
-| data[35] | TR7 | 0 or 1|
-| data[36] | TR8 | 0 or 1|
 */
-
 // 自動化クラス
 class Automation {
 public:
@@ -144,7 +124,7 @@ public:
     PS4_Listener(const std::string &ip, int port)
         : Node("nhk25_natsu_sd"), udp_(ip, port) {
         subscription_ = this->create_subscription<sensor_msgs::msg::Joy>(
-            "joy0", 10,
+            "joy", 10,
             std::bind(&PS4_Listener::ps4_listener_callback, this,
                       std::placeholders::_1));
         RCLCPP_INFO(this->get_logger(),

@@ -1,5 +1,5 @@
 /*
-RRST-NHK-Project 2025 夏ロボ
+RRST-NHK-Project 2010 夏ロボ
 機構制御
 */
 
@@ -18,6 +18,7 @@ RRST-NHK-Project 2025 夏ロボ
 #include "include/IP.hpp"
 #include "include/UDP.hpp"
 
+
 #define MC_PRINTF 0 // マイコン側のprintfを無効化・有効化(0 or 1)
 
 // 各機構の速さの指定(%)
@@ -26,11 +27,12 @@ int speed_lift_down = -20;
 
 
 //射出機構の速さ
-int speed_shot = 25;
-int speed_shoot = 35;
-int speed_longshoot = 45;
+int speed_shot = 50;
+int speed_shoot = 60;
+int speed_longshoot = 70;
 
-std::vector<int16_t> data(37, 0); // マイコンに送信される配列"data"
+std::vector<int16_t> data(19, 0); // マイコンに送信される配列"data"
+
 /*
 マイコンに送信される配列"data"
 debug: マイコンのprintfを有効化, MD: モータードライバー, TR: トランジスタ
@@ -43,197 +45,242 @@ debug: マイコンのprintfを有効化, MD: モータードライバー, TR: �
 | data[4] | MD4 | -100 ~ 100 |
 | data[5] | MD5 | -100 ~ 100 |
 | data[6] | MD6 | -100 ~ 100 |
-| data[7] | Servo1 | 0 ~ 270 |
-| data[8] | Servo2 | 0 ~ 270 |
-| data[9] | Servo3 | 0 ~ 270 |
-| data[10] | Servo4 | 0 ~ 270 |
-| data[11] | TR1 | 0 or 1|
+| data[7] | Servo1 | 0 ~ 80 |
+| data[8] | Servo2 | 0 ~ 80 |
+| data[9] | Servo3 | 0 ~ 80 |
+| data[10] | Servo4 | 0 ~ 80 |
+| data[11] | TR1 | 0 or 1|  //VGOAL
 | data[12] | TR2 | 0 or 1|
-| data[13] | TR3 | 0 or 1|
-| data[14] | TR4 | 0 or 1|
-| data[15] | TR5 | 0 or 1|
+| data[13] | TR3 | 0 or 1|  //ポンプ１
+| data[14] | TR4 | 0 or 1|   //ポンプ２
+| data[15] | TR5 | 0 or 1|  //シリンダ
 | data[16] | TR6 | 0 or 1|
 | data[17] | TR7 | 0 or 1|
 | data[18] | TR8 | 0 or 1|
-//mbed2
-| data[19] | MD1 | -100 ~ 100 |
-| data[20] | MD2 | -100 ~ 100 | 
-| data[21] | MD3 | -100 ~ 100 | 
-| data[22] | MD4 | -100 ~ 100 | 
-| data[23] | MD5 | -100 ~ 100 |
-| data[24] | MD6 | -100 ~ 100 |
-| data[25] | Servo1 | 0 ~ 270 |
-| data[26] | Servo2 | 0 ~ 270 |
-| data[27] | Servo3 | 0 ~ 270 |
-| data[28] | Servo4 | 0 ~ 270 |
-| data[29] | TR1 | 0 or 1|　
-| data[30] | TR2 | 0 or 1|
-| data[31] | TR3 | 0 or 1|  //ポンプ１
-| data[32] | TR4 | 0 or 1|  //ポンプ２
-| data[33] | TR5 | 0 or 1|  //シリンダ
-| data[34] | TR6 | 0 or 1|
-| data[35] | TR7 | 0 or 1|
-| data[36] | TR8 | 0 or 1|
+
 */
 
-// 各機構のシーケンスを格納するクラス
-class Action {
+//初期化
+class Init{
+public:
+    static void init(UDP &udp){
+        for(int i = 1; i <= 18; i++){
+            data[i] = 0;
+        }
+        udp.send(data);
+        std::cout << "初期化完了" << std::endl;
+    }
+};
+
+
+// シュート機構のシーケンスを格納するクラス
+class Shoot_Action {
 public: 
     
     /*射出機構*/
     // 射出シーケンス(１段階目)
     static void shot_action(UDP &udp) {
-        data[19] = speed_shot;
-        data[34] = 1;
+        data[1] = speed_shot;
+        data[16] = 1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "ショット" << std::endl;
-        data[19] = 0;
-        data[34] = 0;
+        data[1] = 0;
         udp.send(data);
         std::cout << "完了" << std::endl;
     }
     // 射出シーケンス(2段階目)
     static void shoot_action(UDP &udp) {
-        data[19] = speed_shoot;
-        data[35] = 1;
+        data[1] = speed_shoot;
+        data[16] = 0;
+        data[17] = 1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "シュート" << std::endl;
-        data[19] = 0;
-        data[35] = 0;
+        data[1] = 0;
+        data[17] = 0;
         udp.send(data);
         std::cout << "完了" << std::endl;
     }
     // 射出シーケンス(3段階目)
     static void longshoot_action(UDP &udp) {
-        data[19] = speed_longshoot;
-        data[36] = 1;
+        data[1] = speed_longshoot;
+        data[17] = 0;
+        data[18] = 1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         udp.send(data);
         std::cout << "ロングシュート" << std::endl;
-        data[19] = 0;
-        data[36] = 0;
+        data[1] = 0;
+        data[18] = 0;
         udp.send(data); 
         std::cout << "完了" << std::endl;
     }
+};
 
-
-    //ボール(餅)回収シーケンス
-    static void collect_ball_action(UDP &udp) {
-        data[25] = 0;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        udp.send(data);
-        std::cout << "初期位置に戻る" << std::endl;
-        data[25] = 45;     
-        udp.send(data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "ボール回収準備中..." << std::endl;
-        data[25] = 90;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::cout << "ボール回収中..." << std::endl;
-        udp.send(data);
-        data[25] = 0;
-        std::cout << "完了." << std::endl;
-        udp.send(data);
-    }
-
-    //段ボール(柱)シーケンス
-
-       /* 必要がなければコメントアウト
-        //servo
-        data[26] = 0;
-        data[27] = 0;
-        //MD
-        data[23] = 0;
-        //ポンプ&シリンダ
-        data[31] = 0;
-        data[32] = 0;
-        data[33] = 0;
-        */
-
-    //リフトの状態管理
-    static bool state_folk_up;
-    static bool state_folk_middle;
-    static bool state_folk_down;
-    
-    //段ボール(柱)回収シーケンス
-    static void ready_collect_box_action(UDP &udp) {
-            data[26] = 0;
-            data[27] = 0;
-            udp.send(data);
-            std::cout << "上棟準備開始" << std::endl;
-            std::cout << "上棟準備中..." << std::endl;
-            data[26] = 90;
-            data[27] = 90;
-            udp.send(data);
-            std::cout << " ..." << std::endl;
-            std::cout << "上棟準備完了" << std::endl;
-            state_folk_up = true;
-    }
-
-    static void collect_box_action(UDP &udp) {
-            data[31] = 1;
-            data[32] = 1;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            udp.send(data);
-            std::cout << "柱回収中" << std::endl;
-            data[31] = 0;
-            data[32] = 0;
-            udp.send(data);
-            state_folk_middle = true;
-            std::cout << "完了." << std::endl;
-    }
-   
-   static void end_collect_box_action(UDP &udp) {
-            state_folk_up = true;
-            std::cout << "上棟開始" << std::endl;
-            data[26] = 0;
-            data[27] = 0;
-            udp.send(data);
-            std::cout << " 上棟完了." << std::endl;
-            state_folk_down = true;
-            std::cout << "柱回収シーケンス完了" << std::endl;
-    }
-
-    
+// リフト機構のシーケンスを格納するクラス
+class Lift_Action{
+public: 
     static void lift_up_action(UDP &udp) {
-            state_folk_up = true;
-            data[33] = 1;
+            data[15] = 1;
             udp.send(data);
             std::cout << "リフト準備開始" << std::endl;
-            data[23] = speed_lift_up;
+            data[2] = speed_lift_up;
             std::this_thread::sleep_for(std::chrono::milliseconds(2000));
             udp.send(data);
             std::cout << "リフト上昇中..." << std::endl;
-            data[23] = 0;
-            data[33] = 0;
+            data[2] = 0;
+            data[15] = 0;
             udp.send(data);
             std::cout << "リフト上昇完了." << std::endl;
     }
 
     static void lift_down_action(UDP &udp) {
-            state_folk_up = true;
-            data[33] = 1;
+            data[15] = 1;
             udp.send(data);
             std::cout << "リフト準備開始" << std::endl;
-            data[23] = speed_lift_down;
+            data[2] = speed_lift_down;
             std::this_thread::sleep_for(std::chrono::milliseconds(2000));
             udp.send(data);
             std::cout << "リフト下降中..." << std::endl;
-            data[23] = 0;
-            data[33] = 0;
+            data[2] = 0;
+            data[15] = 0;
             udp.send(data);
             std::cout << "リフト下降完了." << std::endl;
     }
+};
+
+//フォークの機構のシーケンスを格納
+class Folk_Action{
+
+       /* フォーク機構割当て
+        //servo
+        data[7] = 0;
+        data[8] = 0;　//垂直
+        //ポンプ
+        data[13] = 0;
+        data[14] = 0;
+        */
+   
+    
+public:
+    //サーボの状態管理
+    static bool state_servo_0;
+    static bool state_servo_ver_0;
+    
+    // 段ボール(柱)回収シーケンス
+    // サーボ０°&ポンプ０　<-> サーボ90°&ポンプ1 
+    static void init_folk_action(UDP &udp) {
+            std::cout << "準備中" << std::endl;
+            data[13] = 0;
+            data[14] = 0;
+            data[7] = 0;
+            udp.send(data);
+            state_servo_0 = true;
+            std::cout << "ポンプOFF" << std::endl;
+    }
+
+    static void folk_action(UDP &udp) {
+            std::cout << "準備中" << std::endl;
+            data[13] = 1;
+            data[14] = 1;
+            data[7] = 90;
+            udp.send(data);
+            state_servo_0 = false;
+            std::cout << "ポンプON" << std::endl;
+            std::cout << "完了." << std::endl;
+    }
+   
+    // リフト機構が垂直の場合の柱回収用制御
+    // サーボ０°&ポンプ０　<-> サーボ90°&ポンプ1 
+   static void init_vertical_folk_action(UDP &udp) {
+           std::cout << "準備中" << std::endl;
+            data[13] = 0;
+            data[14] = 0;
+            data[8] = 0;
+            udp.send(data);
+            state_servo_ver_0 = true;
+            std::cout << "垂直方向。ポンプOFF" << std::endl;
+    }
+
+    static void vertical_folk_action(UDP &udp) {
+           std::cout << "準備中" << std::endl;
+            data[13] = 1;
+            data[14] = 1;
+            data[8] = 90;
+            udp.send(data);
+            state_servo_ver_0 = false;
+            std::cout << "垂直方向。ポンプON" << std::endl;
+
+    }
+
+};
+
+bool Folk_Action::state_servo_0 = false;
+bool Folk_Action::state_servo_ver_0 = false;
 
 
-    // テスト用！！実機で実行するな！！！！
+class Ball_Action{
+public:
+    //ボール(餅)回収シーケンス
+    static void init_ball_action(UDP &udp){
+            std::cout << "準備中" << std::endl;
+            data[9] =0;
+            udp.send(data);
+            std::cout << "サーボ０" << std::endl;
+    }
+
+    static void ball_action(UDP &udp){
+            std::cout << "餅回収..." << std::endl;
+            data[9] = 90;
+            udp.send(data);
+            std::cout << "サーボ９０" << std::endl;
+    }
+ 
+};
+
+class Shoot_Yaw_Action{
+public:
+    //ボール(餅)回収シーケンス
+    static  void init_shoot_yaw_action(UDP &udp){
+            std::cout << "準備中" << std::endl;
+            data[10] =0;
+            udp.send(data);
+            std::cout << "サーボ０" << std::endl;
+    }
+
+    static void shoot_yaw_action(UDP &udp){
+            std::cout << "餅回収..." << std::endl;
+            data[10] = 90;
+            udp.send(data);
+            std::cout << "サーボ９０" << std::endl;
+    }
+ 
+};
+
+
+
+
+class Vgoal{    
+public:
+    static void vgoal_action(UDP &udp) {
+    data[11] = 1;
+    udp.send(data);
+     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::cout << "Vゴール!" << std::endl;
+     data[11] = 0;
+    udp.send(data);
+    std::cout << "######" << std::endl;
+    }
+
+};
+
+   // テスト用！！実機で実行するな！！！！
+    /*
     static void tester(UDP &udp) {
         int tester_time = 150;
         while (1) {
             for (int i = 11; i <= 18; ++i) {
-                data[i] = 1;
+                data[i] = 1; 
                 udp.send(data);
                 std::this_thread::sleep_for(std::chrono::milliseconds(tester_time));
             }
@@ -244,22 +291,20 @@ public:
             }
         }
     }
-};
+        */
 
-bool Action::state_folk_up = false;
-bool Action::state_folk_middle = false;
-bool Action::state_folk_down = false;
+
 
 class PS4_Listener : public rclcpp::Node {
 public:
     PS4_Listener(const std::string &ip, int port)
-        : Node("nhk25_natsu"), udp_(ip, port) {
+        : Node("nhk10_natsu"), udp_(ip, port) {
         subscription_ = this->create_subscription<sensor_msgs::msg::Joy>(
             "joy0", 10,
             std::bind(&PS4_Listener::ps4_listener_callback, this,
                       std::placeholders::_1));
         RCLCPP_INFO(this->get_logger(),
-                    "NATSUROBO2025 initialized with IP: %s, Port: %d", ip.c_str(),
+                    "NATSUROBO2010 initialized with IP: %s, Port: %d", ip.c_str(),
                     port);
     }
 
@@ -277,18 +322,18 @@ private:
         bool TRIANGLE = msg->buttons[2];
         bool SQUARE = msg->buttons[3];
 
-        //bool LEFT = msg->axes[6] == 1.0;
-        //bool RIGHT = msg->axes[6] == -1.0;
+        bool LEFT = msg->axes[6] == 1.0;
+        bool RIGHT = msg->axes[6] == -1.0;
         bool UP = msg->axes[7] == 1.0;
         bool DOWN = msg->axes[7] == -1.0;
 
         bool L1 = msg->buttons[4];
-        //bool R1 = msg->buttons[5];
+        bool R1 = msg->buttons[5];
 
-        // float L2 = (-1 * msg->axes[2] + 1) / 2;
-        // float R2 = (-1 * msg->axes[5] + 1) / 2;
+        //float L2 = (-1 * msg->axes[2] + 1) / 2;
+        //float R2 = (-1 * msg->axes[5] + 1) / 2;
 
-        // bool SHARE = msg->buttons[8];
+        bool SHARE = msg->buttons[8];
         // bool OPTION = msg->buttons[9];
         bool PS = msg->buttons[10];
 
@@ -308,46 +353,82 @@ private:
             }
             rclcpp::shutdown();
         }
+        
+        //機構を初期状態にする
+        if (CROSS) {
+                Init::init(udp_);
+        }
 
+
+        //シュート機構
+        // ボタンを一回押すごとに速度変更
+        if (SQUARE && (data[18] == 1 || (data[16] == 0 && data[17] == 0 && data[18] == 0))){
+            Shoot_Action::shot_action(udp_);
+        }
+
+        if (SQUARE && data[16] == 1){
+            Shoot_Action::shoot_action(udp_);
+        }
+
+        if (SQUARE && data[17] == 1) {
+            Shoot_Action::longshoot_action(udp_);
+        }
+
+        // リフトのフォーク機構
+        //　サーボ０°＋ポンプ０　-> サーボ90°＋ポンプ1 -> サーボ0°＋ポンプ0
         if (CIRCLE) {
-            Action::collect_ball_action(udp_);
+            if (Folk_Action::state_servo_0){
+                    Folk_Action::folk_action(udp_);
+            }
+            else{
+                    Folk_Action::init_folk_action(udp_);
+            }
         }
 
-        if (CROSS && Action::state_folk_down) {
-            Action::ready_collect_box_action(udp_);
-        }
-            
-        if (CROSS && Action::state_folk_up) {
-            Action::collect_box_action(udp_);
+        ////ポンプ機構が垂直の場合
+        if (TRIANGLE) {
+            if(Folk_Action::state_servo_ver_0){
+                    Folk_Action::vertical_folk_action(udp_);
+            }
+            else{
+                    Folk_Action::init_vertical_folk_action(udp_);
+            }
         }
         
-        if (CROSS && Action::state_folk_middle) {
-            Action::end_collect_box_action(udp_);
-        }
-
-        if (TRIANGLE){
-            Action::shot_action(udp_);
-        }
-
-        if (SQUARE){
-            Action::shoot_action(udp_);
-        }
-
-        if (L1) {
-            Action::longshoot_action(udp_);
-        }
-
+        //リフト機構
         if (UP) {
-            Action::lift_up_action(udp_);
+            Lift_Action::lift_up_action(udp_);
         }
 
         if (DOWN) {
-            Action::lift_down_action(udp_);
+            Lift_Action::lift_down_action(udp_);
+        }
+
+        //ボール回収機構
+        if(R1) {
+            Ball_Action::init_ball_action(udp_);
+        }
+
+        if(L1) {
+            Ball_Action::ball_action(udp_);
+        }
+
+        //
+        if(LEFT) {
+            Shoot_Yaw_Action::init_shoot_yaw_action(udp_);
+        }
+
+        if(RIGHT) {
+            Shoot_Yaw_Action::shoot_yaw_action(udp_);
+        }
+
+        if(SHARE){
+            Vgoal::vgoal_action(udp_);
         }
 
         // if (OPTION) {
-        //     Action::tester(udp_);
-        // }
+        //     Ball_Action::tester(udp_);
+        // } 
 
         udp_.send(data);
     }
@@ -355,6 +436,7 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr subscription_;
     UDP udp_;
 };
+
 
 class Params_Listener : public rclcpp::Node {
 public:
@@ -365,7 +447,7 @@ public:
                       std::placeholders::_1));
         RCLCPP_INFO(this->get_logger(),
 
-                    "NATSUROBO2025 Parameter Listener initialized");
+                    "NATSUROBO2010 Parameter Listener initialized");
     }
 
 private:
