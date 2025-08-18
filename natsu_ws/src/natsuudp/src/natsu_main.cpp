@@ -26,10 +26,6 @@ int speed_lift_up = 60;
 int speed_lift_down = -60;
 
 
-//射出機構の速さ
-int speed_shot = 50;
-int speed_shoot = 60;
-int speed_longshoot = 70;
 
 //ラッチ用の文字設定
 bool SERVOMODE = false;
@@ -78,42 +74,8 @@ public:
 };
 
 
-// シュート機構のシーケンスを格納するクラス
-class Shoot_Action {
-public: 
-    
-    /*射出機構*/
-    // 射出シーケンス(１段階目)
-    static void shot_action(UDP &udp) {
-        data[3] = speed_shot;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        udp.send(data);
-        std::cout << "ショット" << std::endl;
-        data[3] = 0;
-        udp.send(data);
-        std::cout << "完了" << std::endl;
-    }
-    // 射出シーケンス(2段階目)
-    static void shoot_action(UDP &udp) {
-        data[3] = speed_shoot;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        udp.send(data);
-        std::cout << "シュート" << std::endl;
-        data[3] = 0;
-        udp.send(data);
-        std::cout << "完了" << std::endl;
-    }
-    // 射出シーケンス(3段階目)
-    static void longshoot_action(UDP &udp) {
-        data[3] = speed_longshoot;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        udp.send(data);
-        std::cout << "ロングシュート" << std::endl;
-        data[3] = 0;
-        udp.send(data); 
-        std::cout << "完了" << std::endl;
-    }
-};
+
+
 
 // リフト機構のシーケンスを格納するクラス
 class Lift_Action{
@@ -143,7 +105,7 @@ public:
 
 //フォークの機構のシーケンスを格納
 class Folk_Action{
-public:
+
        /* フォーク機構割当て
         //servo
         data[7] = 0;
@@ -153,6 +115,12 @@ public:
         data[14] = 0;
         */
    
+    
+public:
+    //サーボの状態管理
+    static bool state_servo_0;
+    static bool state_servo_ver_0;
+    
     // 段ボール(柱)回収シーケンス
     // サーボ０°&ポンプ０　<-> サーボ90°&ポンプ1 
     static void init_folk_action(UDP &udp) {
@@ -200,6 +168,8 @@ public:
     }
 
 };
+
+
 
 class Ball_Action{
 public:
